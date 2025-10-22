@@ -1,115 +1,542 @@
+-- roblox-ui-lib.lua (расширенная версия с слайдерами, мультибоксами и цветпикером)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DynamicUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
 local ui = {}
+local window = nil
+local categories = {}
+local currentCategory = nil
+local buttons = {}
 
-local UIS = game:GetService("UserInputService")
+local WINDOW_SIZE = Vector2.new(520, 380)
+local TOPBAR_HEIGHT = 40
+local CATEGORY_WIDTH = 140
 
-function ui.createwindow(title)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+-- вспомогательная плавная анимация цвета
+local function tweenColor(inst, prop, targetColor, duration)
+    local tweenService = game:GetService("TweenService")
+    local tweenInfo = TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = tweenService:Create(inst, tweenInfo, {[prop] = targetColor})
+    tween:Play()
+end
+
+-- Создание окна
+function ui.createWindow(title)
+    WINDOW_TITLE = title or "UI Window"
+
+    if window then window:Destroy() end
+
+    window = Instance.new("Frame")
+    window.Name = "MainWindow"
+    window.Size = UDim2.new(0, WINDOW_SIZE.X, 0, WINDOW_SIZE.Y)
+    window.Position = UDim2.new(0.5, -WINDOW_SIZE.X/2, 0.5, -WINDOW_SIZE.Y/2)
+    window.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    window.BorderSizePixel = 0
+    window.Active = true
+    window.Draggable = true
+    window.Parent = screenGui
 
     local topBar = Instance.new("Frame")
-    topBar.Size = UDim2.new(0, 400, 0, 40)
-    topBar.Position = UDim2.new(0.5, -200, 0.2, 0)
-    topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    topBar.Parent = screenGui
     topBar.Name = "TopBar"
+    topBar.Size = UDim2.new(1, 0, 0, TOPBAR_HEIGHT)
+    topBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    topBar.BorderSizePixel = 0
+    topBar.Parent = window
 
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, 0, 1, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = title
-    titleLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextSize = 22
-    titleLabel.Parent = topBar
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, 0, 1, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = WINDOW_TITLE
+    titleText.TextColor3 = Color3.fromRGB(220, 220, 220)
+    titleText.Font = Enum.Font.GothamSemibold
+    titleText.TextSize = 16
+    titleText.Parent = topBar
 
-    local leftPanel = Instance.new("Frame")
-    leftPanel.Size = UDim2.new(0, 120, 1, -40)
-    leftPanel.Position = UDim2.new(0, 0, 0, 40)
-    leftPanel.BackgroundColor3 = Color3.fromRGB(35,35,35)
-    leftPanel.Parent = topBar.Parent
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Size = UDim2.new(1, 0, 1, -TOPBAR_HEIGHT)
+    contentFrame.Position = UDim2.new(0, 0, 0, TOPBAR_HEIGHT)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = window
 
-    local mainPanel = Instance.new("Frame")
-    mainPanel.Size = UDim2.new(0, 280, 1, -40)
-    mainPanel.Position = UDim2.new(0, 120, 0, 40)
-    mainPanel.BackgroundColor3 = Color3.fromRGB(55,55,55)
-    mainPanel.Parent = topBar.Parent
+    local categoryList = Instance.new("ScrollingFrame")
+    categoryList.Size = UDim2.new(0, CATEGORY_WIDTH, 1, 0)
+    categoryList.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    categoryList.BorderSizePixel = 0
+    categoryList.ScrollBarThickness = 4
+    categoryList.CanvasSize = UDim2.new(0, 0, 0, 0)
+    categoryList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    categoryList.Parent = contentFrame
 
-    local categories = {}
+    local categoryLayout = Instance.new("UIListLayout")
+    categoryLayout.Padding = UDim.new(0, 6)
+    categoryLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    categoryLayout.Parent = categoryList
 
-    -- Drag logic
-    local dragging = false
-    local offset
-    topBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            offset = topBar.Position - UDim2.new(0, UIS:GetMouseLocation().X, 0, UIS:GetMouseLocation().Y)
+    local contentArea = Instance.new("ScrollingFrame")
+    contentArea.Size = UDim2.new(1, -CATEGORY_WIDTH, 1, 0)
+    contentArea.Position = UDim2.new(0, CATEGORY_WIDTH, 0, 0)
+    contentArea.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    contentArea.BorderSizePixel = 0
+    contentArea.ScrollBarThickness = 6
+    contentArea.CanvasSize = UDim2.new(0, 0, 0, 0)
+    contentArea.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    contentArea.Parent = contentFrame
+
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.Padding = UDim.new(0, 12)
+    contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    contentLayout.Parent = contentArea
+
+    -- Сохраняем для внутреннего доступа
+    ui._categoryList = categoryList
+    ui._contentArea = contentArea
+    ui._contentLayout = contentLayout
+
+    currentCategory = nil
+    categories = {}
+    buttons = {}
+end
+
+-- Добавить категорию
+function ui.addCategory(name)
+    if not window then ui.createWindow() end
+
+    local categoryList = ui._categoryList
+
+    local categoryButton = Instance.new("TextButton")
+    categoryButton.Name = "Category_" .. HttpService:GenerateGUID(false)
+    categoryButton.Size = UDim2.new(1, -10, 0, 36)
+    categoryButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    categoryButton.BorderSizePixel = 0
+    categoryButton.Text = name
+    categoryButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    categoryButton.Font = Enum.Font.GothamSemibold
+    categoryButton.TextSize = 15
+    categoryButton.AutoButtonColor = false
+    categoryButton.LayoutOrder = #categories + 1
+    categoryButton.Parent = categoryList
+
+    local function setActive(isActive)
+        if isActive then
+            tweenColor(categoryButton, "BackgroundColor3", Color3.fromRGB(90, 90, 90))
+            categoryButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            tweenColor(categoryButton, "BackgroundColor3", Color3.fromRGB(55, 55, 55))
+            categoryButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end
+
+    categoryButton.MouseEnter:Connect(function()
+        if currentCategory ~= name then
+            tweenColor(categoryButton, "BackgroundColor3", Color3.fromRGB(75, 75, 75))
         end
     end)
-    topBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local mouse = UIS:GetMouseLocation()
-            topBar.Position = UDim2.new(0, mouse.X, 0, mouse.Y) + offset
-            leftPanel.Position = UDim2.new(0, 0, 0, 40) + UDim2.new(0, topBar.Position.X.Offset, 0, topBar.Position.Y.Offset)
-            mainPanel.Position = UDim2.new(0, 120, 0, 40) + UDim2.new(0, topBar.Position.X.Offset, 0, topBar.Position.Y.Offset)
+    categoryButton.MouseLeave:Connect(function()
+        if currentCategory ~= name then
+            tweenColor(categoryButton, "BackgroundColor3", Color3.fromRGB(55, 55, 55))
         end
     end)
 
-    return {
-        _gui = screenGui,
-        _categories = categories,
-        _mainPanel = mainPanel,
-        _leftPanel = leftPanel,
-        addcategory = function(self, name)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 30)
-            btn.BackgroundColor3 = Color3.fromRGB(55,55,55)
-            btn.Text = name
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 16
-            btn.TextColor3 = Color3.fromRGB(180,180,180)
-            btn.Parent = self._leftPanel
+    categoryButton.MouseButton1Click:Connect(function()
+        if currentCategory == name then return end
+        currentCategory = name
 
-            local container = Instance.new("Frame")
-            container.Size = UDim2.new(1, -10, 1, 0)
-            container.Position = UDim2.new(0, 5, 0, 0)
-            container.BackgroundTransparency = 1
-            container.Parent = self._mainPanel
-            container.Visible = false
+        for _, cat in pairs(categories) do
+            setActive(cat.name == name)
+        end
 
-            self._categories[name] = container
-
-            btn.MouseButton1Click:Connect(function()
-                for _, c in pairs(self._mainPanel:GetChildren()) do
-                    if c:IsA("Frame") then c.Visible = false end
-                end
-                container.Visible = true
-            end)
-
-            if #self._leftPanel:GetChildren() == 1 then
-                container.Visible = true -- автоселект первой категории
+        -- показать кнопки выбранной категории
+        for btnId, data in pairs(buttons) do
+            local btn = ui._contentArea:FindFirstChild(btnId)
+            if btn then
+                btn.Visible = (data.category == name)
             end
-        end,
+        end
+    end)
 
-        addbutton = function(self, category, btn_name, callback)
-            local cont = self._categories[category]
-            if not cont then error("Category not found: " .. category) end
+    table.insert(categories, {name = name, button = categoryButton})
 
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 32)
-            btn.BackgroundColor3 = Color3.fromRGB(75,75,75)
-            btn.Text = btn_name
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 16
-            btn.TextColor3 = Color3.fromRGB(200,200,200)
-            btn.Parent = cont
+    -- Если первая категория — активируем
+    if #categories == 1 then
+        currentCategory = name
+        setActive(true)
+    else
+        setActive(false)
+    end
+end
 
-            btn.MouseButton1Click:Connect(callback)
-        end,
+-- Добавить кнопку
+function ui.addButton(categoryName, buttonLabel, callback)
+    if not window then ui.createWindow() end
+
+    local contentArea = ui._contentArea
+
+    local buttonId = "Button_" .. HttpService:GenerateGUID(false)
+
+    local uiButton = Instance.new("TextButton")
+    uiButton.Name = buttonId
+    uiButton.Size = UDim2.new(1, 0, 0, 40)
+    uiButton.BackgroundColor3 = Color3.fromRGB(65, 65, 65)
+    uiButton.BorderSizePixel = 0
+    uiButton.Text = buttonLabel
+    uiButton.TextColor3 = Color3.fromRGB(240, 240, 240)
+    uiButton.Font = Enum.Font.Gotham
+    uiButton.TextSize = 15
+    uiButton.AutoButtonColor = false
+    uiButton.LayoutOrder = #buttons + 1
+    uiButton.Parent = contentArea
+    uiButton.Visible = categoryName == currentCategory
+
+    uiButton.MouseEnter:Connect(function()
+        tweenColor(uiButton, "BackgroundColor3", Color3.fromRGB(85, 85, 85))
+    end)
+    uiButton.MouseLeave:Connect(function()
+        tweenColor(uiButton, "BackgroundColor3", Color3.fromRGB(65, 65, 65))
+    end)
+    uiButton.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+
+    buttons[buttonId] = {
+        category = categoryName,
+        label = buttonLabel,
+        callback = callback
+    }
+end
+
+-- Добавить слайдер (от 0 до 1)
+function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValue, callback)
+    if not window then ui.createWindow() end
+
+    local contentArea = ui._contentArea
+    local sliderId = "Slider_" .. HttpService:GenerateGUID(false)
+
+    local container = Instance.new("Frame")
+    container.Name = sliderId
+    container.Size = UDim2.new(1, 0, 0, 50)
+    container.BackgroundTransparency = 1
+    container.LayoutOrder = #buttons + 1
+    container.Parent = contentArea
+    container.Visible = categoryName == currentCategory
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.4, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = sliderLabel
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+
+    local sliderBar = Instance.new("Frame")
+    sliderBar.Size = UDim2.new(0.55, 0, 0, 16)
+    sliderBar.Position = UDim2.new(0.44, 0, 0.5, -8)
+    sliderBar.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+    sliderBar.BorderSizePixel = 0
+    sliderBar.Parent = container
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new(0, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(150, 150, 255)
+    sliderFill.BorderSizePixel = 0
+    sliderFill.Parent = sliderBar
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.1, 0, 1, 0)
+    valueLabel.Position = UDim2.new(1, 6, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    valueLabel.Font = Enum.Font.Gotham
+    valueLabel.TextSize = 14
+    valueLabel.Parent = container
+
+    local minV, maxV = minValue or 0, maxValue or 100
+    local val = (defaultValue and math.clamp(defaultValue, minV, maxV)) or minV
+
+    local function updateUI(value)
+        local clamped = math.clamp(value, minV, maxV)
+        val = clamped
+        local percent = (clamped - minV) / (maxV - minV)
+        sliderFill:TweenSize(UDim2.new(percent, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+        valueLabel.Text = string.format("%.2f", clamped)
+        if callback then
+            pcall(callback, clamped)
+        end
+    end
+
+    sliderBar.MouseButton1Down:Connect(function()
+        local mouse = player:GetMouse()
+        local function onMove()
+            local relativeX = math.clamp(mouse.X - sliderBar.AbsolutePosition.X, 0, sliderBar.AbsoluteSize.X)
+            local value = minV + (relativeX/sliderBar.AbsoluteSize.X)*(maxV-minV)
+            updateUI(value)
+        end
+
+        local moveConn
+        moveConn = mouse.Move:Connect(onMove)
+        onMove()
+
+        local upConn
+        upConn = UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                moveConn:Disconnect()
+                upConn:Disconnect()
+            end
+        end)
+    end)
+
+    updateUI(val)
+
+    buttons[sliderId] = {
+        category = categoryName,
+        label = sliderLabel,
+        callback = callback,
+        value = val,
+        type = "slider"
+    }
+end
+
+-- Добавить мультибокс (несколько чекбоксов)
+function ui.addMultiBox(categoryName, multiLabel, optionsTable, callback)
+    if not window then ui.createWindow() end
+
+    local contentArea = ui._contentArea
+    local multiId = "MultiBox_" .. HttpService:GenerateGUID(false)
+
+    local container = Instance.new("Frame")
+    container.Name = multiId
+    container.Size = UDim2.new(1, 0, 0, 30 + #optionsTable * 28)
+    container.BackgroundTransparency = 1
+    container.LayoutOrder = #buttons + 1
+    container.Parent = contentArea
+    container.Visible = categoryName == currentCategory
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 24)
+    label.BackgroundTransparency = 1
+    label.Text = multiLabel
+    label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    label.Font = Enum.Font.GothamSemibold
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+
+    local selections = {}
+
+    for i, option in ipairs(optionsTable) do
+        local checkBox = Instance.new("TextButton")
+        checkBox.Name = "CheckBox_" .. i
+        checkBox.Size = UDim2.new(1, 0, 0, 24)
+        checkBox.Position = UDim2.new(0, 0, 0, 24 + (i-1)*28)
+        checkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        checkBox.BorderSizePixel = 0
+        checkBox.TextColor3 = Color3.fromRGB(220, 220, 220)
+        checkBox.Font = Enum.Font.Gotham
+        checkBox.TextSize = 14
+        checkBox.TextXAlignment = Enum.TextXAlignment.Left
+        checkBox.Text = "   " .. option
+        checkBox.AutoButtonColor = false
+        checkBox.Parent = container
+
+        local isChecked = false
+        local checkMark = Instance.new("TextLabel")
+        checkMark.Size = UDim2.new(0, 18, 0, 18)
+        checkMark.Position = UDim2.new(0, 4, 0, 3)
+        checkMark.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        checkMark.BorderSizePixel = 0
+        checkMark.TextColor3 = Color3.fromRGB(150, 150, 255)
+        checkMark.Text = ""
+        checkMark.Font = Enum.Font.SourceSansBold
+        checkMark.TextSize = 18
+        checkMark.Parent = checkBox
+
+        local function updateVisual()
+            if isChecked then
+                checkBox.BackgroundColor3 = Color3.fromRGB(80, 80, 110)
+                checkMark.Text = "✓"
+            else
+                checkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                checkMark.Text = ""
+            end
+        end
+
+        checkBox.MouseEnter:Connect(function()
+            tweenColor(checkBox, "BackgroundColor3", Color3.fromRGB(75, 75, 95))
+        end)
+        checkBox.MouseLeave:Connect(function()
+            local col = isChecked and Color3.fromRGB(80, 80, 110) or Color3.fromRGB(60, 60, 60)
+            tweenColor(checkBox, "BackgroundColor3", col)
+        end)
+
+        checkBox.MouseButton1Click:Connect(function()
+            isChecked = not isChecked
+            selections[option] = isChecked
+            updateVisual()
+            if callback then
+                pcall(callback, selections)
+            end
+        end)
+
+        updateVisual()
+    end
+
+    buttons[multiId] = {
+        category = categoryName,
+        label = multiLabel,
+        callback = callback,
+        value = selections,
+        type = "multibox"
+    }
+end
+
+-- Добавить Color Picker
+function ui.addColorPicker(categoryName, pickerLabel, defaultColor, callback)
+    if not window then ui.createWindow() end
+
+    local contentArea = ui._contentArea
+    local pickerId = "ColorPicker_" .. HttpService:GenerateGUID(false)
+
+    local container = Instance.new("Frame")
+    container.Name = pickerId
+    container.Size = UDim2.new(1, 0, 0, 50)
+    container.BackgroundTransparency = 1
+    container.LayoutOrder = #buttons + 1
+    container.Parent = contentArea
+    container.Visible = categoryName == currentCategory
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.45, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = pickerLabel
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 15
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = container
+
+    local colorBox = Instance.new("Frame")
+    colorBox.Size = UDim2.new(0, 40, 0, 24)
+    colorBox.Position = UDim2.new(0.5, 0, 0.5, -12)
+    colorBox.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 255, 255)
+    colorBox.BorderSizePixel = 0
+    colorBox.Parent = container
+
+    local isPicking = false
+    local mouse = player:GetMouse()
+
+    local function openColorPicker()
+        if isPicking then return end
+        isPicking = true
+
+        local pickerGui = Instance.new("ScreenGui")
+        pickerGui.Name = "ColorPickerGui"
+        pickerGui.Parent = playerGui
+
+        local pickerFrame = Instance.new("Frame")
+        pickerFrame.Size = UDim2.new(0, 260, 0, 180)
+        pickerFrame.Position = UDim2.new(0.5, -130, 0.5, -90)
+        pickerFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        pickerFrame.BorderSizePixel = 0
+        pickerFrame.Parent = pickerGui
+
+        local hueSlider = Instance.new("Frame")
+        hueSlider.Size = UDim2.new(0, 20, 1, -40)
+        hueSlider.Position = UDim2.new(1, -30, 0, 10)
+        hueSlider.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        hueSlider.Parent = pickerFrame
+
+        local hueFill = Instance.new("Frame")
+        hueFill.Size = UDim2.new(1, 0, 0.05, 0)
+        hueFill.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        hueFill.Position = UDim2.new(0, 0, 0, 0)
+        hueFill.Parent = hueSlider
+
+        local satValPicker = Instance.new("ImageButton")
+        satValPicker.Size = UDim2.new(1, -50, 1, -20)
+        satValPicker.Position = UDim2.new(0, 10, 0, 10)
+        satValPicker.BackgroundColor3 = defaultColor or Color3.fromRGB(255, 0, 0)
+        satValPicker.Image = "rbxassetid://4155801252" -- градиент для насыщенности и значения
+        satValPicker.Parent = pickerFrame
+
+        function pickerGui:DestroyPicker()
+            pickerGui:Destroy()
+            isPicking = false
+        end
+
+        local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+
+        -- обновить цвета по HSV, упрощенный (для демонстрации)
+        local function updateColor(r, g, b)
+            currentColor = Color3.new(r, g, b)
+            colorBox.BackgroundColor3 = currentColor
+            satValPicker.BackgroundColor3 = currentColor
+            if callback then
+                pcall(callback, currentColor)
+            end
+        end
+
+        satValPicker.MouseButton1Down:Connect(function()
+            local function moveFunc()
+                local pos = Vector2.new(mouse.X, mouse.Y)
+                local relative = Vector2.new(
+                    math.clamp(pos.X - satValPicker.AbsolutePosition.X, 0, satValPicker.AbsoluteSize.X),
+                    math.clamp(pos.Y - satValPicker.AbsolutePosition.Y, 0, satValPicker.AbsoluteSize.Y)
+                )
+                -- условно: меняем R и G для демонстрации
+                updateColor(relative.X / satValPicker.AbsoluteSize.X, relative.Y / satValPicker.AbsoluteSize.Y, 0.5)
+            end
+
+            local moveConn
+            moveConn = mouse.Move:Connect(moveFunc)
+            moveFunc()
+
+            local upConn
+            upConn = UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    moveConn:Disconnect()
+                    upConn:Disconnect()
+                end
+            end)
+        end)
+
+        pickerGui.Parent.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local mousePos = UserInputService:GetMouseLocation()
+                local absPos = pickerFrame.AbsolutePosition
+                local absSize = pickerFrame.AbsoluteSize
+
+                if mousePos.X < absPos.X or mousePos.X > absPos.X + absSize.X or
+                   mousePos.Y < absPos.Y or mousePos.Y > absPos.Y + absSize.Y then
+                    pickerGui:DestroyPicker()
+                end
+            end
+        end)
+    end
+
+    colorBox.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            openColorPicker()
+        end
+    end)
+
+    buttons[pickerId] = {
+        category = categoryName,
+        label = pickerLabel,
+        value = defaultColor,
+        callback = callback,
+        type = "colorpicker"
     }
 end
 
