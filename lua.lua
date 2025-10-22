@@ -1,4 +1,4 @@
--- roblox-ui-lib.lua (исправленная версия)
+-- roblox-ui-lib.lua (исправленная версия с Fly и правильным порядком)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -42,14 +42,6 @@ local function tweenColor(inst, prop, targetColor, duration)
     return tween
 end
 
--- Плавное изменение видимости
-local function tweenVisibility(instance, targetTransparency, duration)
-    local tweenInfo = TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(instance, tweenInfo, {BackgroundTransparency = targetTransparency})
-    tween:Play()
-    return tween
-end
-
 -- Создание окна
 function ui.createWindow(title)
     WINDOW_TITLE = title or "UI Window"
@@ -76,7 +68,7 @@ function ui.createWindow(title)
     topBar.BorderSizePixel = 0
     topBar.Parent = window
     
-    -- Убираем закругления снизу у хедера
+    -- Закругления только сверху
     local topBarCorner = Instance.new("UICorner")
     topBarCorner.CornerRadius = UDim.new(0, 8)
     topBarCorner.Parent = topBar
@@ -161,7 +153,6 @@ function ui.addCategory(name)
     categoryButton.LayoutOrder = #categories + 1
     categoryButton.Parent = categoryList
     
-    -- Закругление кнопки категории
     applyCornerRadius(categoryButton)
 
     local function setActive(isActive)
@@ -239,11 +230,11 @@ function ui.addButton(categoryName, buttonLabel, callback)
     uiButton.Font = Enum.Font.Gotham
     uiButton.TextSize = 15
     uiButton.AutoButtonColor = false
-    uiButton.LayoutOrder = #buttons + 1
+    -- Изменяем LayoutOrder чтобы новые элементы появлялись снизу
+    uiButton.LayoutOrder = 10000 + #buttons
     uiButton.Parent = contentArea
     uiButton.Visible = categoryName == currentCategory
     
-    -- Закругление кнопки
     applyCornerRadius(uiButton)
 
     uiButton.MouseEnter:Connect(function()
@@ -262,7 +253,6 @@ function ui.addButton(categoryName, buttonLabel, callback)
         callback = callback
     }
     
-    -- Сохраняем элемент для управления видимостью
     elements[buttonLabel] = uiButton
 end
 
@@ -277,7 +267,8 @@ function ui.addCheckbox(categoryName, checkboxLabel, defaultValue, callback)
     container.Name = checkboxId
     container.Size = UDim2.new(1, 0, 0, 36)
     container.BackgroundTransparency = 1
-    container.LayoutOrder = #buttons + 1
+    -- Изменяем LayoutOrder чтобы новые элементы появлялись снизу
+    container.LayoutOrder = 10000 + #buttons
     container.Parent = contentArea
     container.Visible = categoryName == currentCategory
 
@@ -359,7 +350,6 @@ function ui.addCheckbox(categoryName, checkboxLabel, defaultValue, callback)
         type = "checkbox"
     }
     
-    -- Сохраняем элемент для управления видимостью
     elements[checkboxLabel] = container
     
     return {
@@ -376,7 +366,7 @@ function ui.addCheckbox(categoryName, checkboxLabel, defaultValue, callback)
     }
 end
 
--- Добавить слайдер (исправленная версия)
+-- Добавить слайдер
 function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValue, callback)
     if not window then ui.createWindow() end
 
@@ -387,7 +377,8 @@ function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValu
     container.Name = sliderId
     container.Size = UDim2.new(1, 0, 0, 50)
     container.BackgroundTransparency = 1
-    container.LayoutOrder = #buttons + 1
+    -- Изменяем LayoutOrder чтобы новые элементы появлялись снизу
+    container.LayoutOrder = 10000 + #buttons
     container.Parent = contentArea
     container.Visible = categoryName == currentCategory
 
@@ -443,7 +434,6 @@ function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValu
         end
     end
 
-    -- Исправление: используем InputBegan вместо MouseButton1Down
     sliderBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             local connection
@@ -474,7 +464,6 @@ function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValu
         type = "slider"
     }
     
-    -- Сохраняем элемент для управления видимостью
     elements[sliderLabel] = container
     
     return {
@@ -485,112 +474,6 @@ function ui.addSlider(categoryName, sliderLabel, minValue, maxValue, defaultValu
             return val
         end
     }
-end
-
--- Добавить мультибокс (несколько чекбоксов)
-function ui.addMultiBox(categoryName, multiLabel, optionsTable, callback)
-    if not window then ui.createWindow() end
-
-    local contentArea = ui._contentArea
-    local multiId = "MultiBox_" .. HttpService:GenerateGUID(false)
-
-    local container = Instance.new("Frame")
-    container.Name = multiId
-    container.Size = UDim2.new(1, 0, 0, 30 + #optionsTable * 28)
-    container.BackgroundTransparency = 1
-    container.LayoutOrder = #buttons + 1
-    container.Parent = contentArea
-    container.Visible = categoryName == currentCategory
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 24)
-    label.BackgroundTransparency = 1
-    label.Text = multiLabel
-    label.TextColor3 = Color3.fromRGB(230, 230, 230)
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 15
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = container
-
-    local selections = {}
-
-    for i, option in ipairs(optionsTable) do
-        local checkBox = Instance.new("TextButton")
-        checkBox.Name = "CheckBox_" .. i
-        checkBox.Size = UDim2.new(1, 0, 0, 24)
-        checkBox.Position = UDim2.new(0, 0, 0, 24 + (i-1)*28)
-        checkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        checkBox.BorderSizePixel = 0
-        checkBox.TextColor3 = Color3.fromRGB(220, 220, 220)
-        checkBox.Font = Enum.Font.Gotham
-        checkBox.TextSize = 14
-        checkBox.TextXAlignment = Enum.TextXAlignment.Left
-        checkBox.Text = "   " .. option
-        checkBox.AutoButtonColor = false
-        checkBox.Parent = container
-        
-        applyCornerRadius(checkBox)
-
-        local isChecked = false
-        local checkMark = Instance.new("Frame")
-        checkMark.Size = UDim2.new(0, 18, 0, 18)
-        checkMark.Position = UDim2.new(0, 4, 0, 3)
-        checkMark.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        checkMark.BorderSizePixel = 0
-        checkMark.Parent = checkBox
-        
-        applyCornerRadius(checkMark, 4)
-
-        local checkIcon = Instance.new("TextLabel")
-        checkIcon.Size = UDim2.new(1, 0, 1, 0)
-        checkIcon.BackgroundTransparency = 1
-        checkIcon.TextColor3 = Color3.fromRGB(150, 150, 255)
-        checkIcon.Text = "✓"
-        checkIcon.Font = Enum.Font.SourceSansBold
-        checkIcon.TextSize = 18
-        checkIcon.Visible = false
-        checkIcon.Parent = checkMark
-
-        local function updateVisual()
-            if isChecked then
-                checkBox.BackgroundColor3 = Color3.fromRGB(80, 80, 110)
-                checkIcon.Visible = true
-            else
-                checkBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-                checkIcon.Visible = false
-            end
-        end
-
-        checkBox.MouseEnter:Connect(function()
-            tweenColor(checkBox, "BackgroundColor3", Color3.fromRGB(75, 75, 95))
-        end)
-        checkBox.MouseLeave:Connect(function()
-            local col = isChecked and Color3.fromRGB(80, 80, 110) or Color3.fromRGB(60, 60, 60)
-            tweenColor(checkBox, "BackgroundColor3", col)
-        end)
-
-        checkBox.MouseButton1Click:Connect(function()
-            isChecked = not isChecked
-            selections[option] = isChecked
-            updateVisual()
-            if callback then
-                pcall(callback, selections)
-            end
-        end)
-
-        updateVisual()
-    end
-
-    buttons[multiId] = {
-        category = categoryName,
-        label = multiLabel,
-        callback = callback,
-        value = selections,
-        type = "multibox"
-    }
-    
-    -- Сохраняем элемент для управления видимостью
-    elements[multiLabel] = container
 end
 
 return ui
