@@ -1,6 +1,6 @@
 -- Modern UI Library for Roblox Studio
 -- Author: Assistant
--- Version: 2.0
+-- Version: 2.1
 
 local ModernUILibrary = {}
 ModernUILibrary.__index = ModernUILibrary
@@ -474,6 +474,7 @@ function ModernUILibrary:AddCategory(name)
 	categoryFrame.ScrollBarThickness = 3
 	categoryFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
 	categoryFrame.Visible = false
+	categoryFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	categoryFrame.Parent = self.ContentFrame
 	
 	local layout = Instance.new("UIListLayout")
@@ -484,6 +485,7 @@ function ModernUILibrary:AddCategory(name)
 	local padding = Instance.new("UIPadding")
 	padding.PaddingTop = UDim.new(0, 5)
 	padding.PaddingLeft = UDim.new(0, 5)
+	padding.PaddingRight = UDim.new(0, 5)
 	padding.Parent = categoryFrame
 	
 	self.Categories[name] = categoryFrame
@@ -523,8 +525,8 @@ end
 function ModernUILibrary:CreateLabel(parent, text, size)
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
-	label.Size = size or UDim2.new(1, -20, 0, 25)
-	label.Position = UDim2.new(0, 10, 0, 0)
+	label.Size = size or UDim2.new(1, -10, 0, 25)
+	label.Position = UDim2.new(0, 5, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -539,8 +541,8 @@ end
 function ModernUILibrary:CreateButton(parent, text, callback, size)
 	local button = Instance.new("TextButton")
 	button.Name = "Button"
-	button.Size = size or UDim2.new(1, -20, 0, 35)
-	button.Position = UDim2.new(0, 10, 0, 0)
+	button.Size = size or UDim2.new(1, -10, 0, 35)
+	button.Position = UDim2.new(0, 5, 0, 0)
 	button.BackgroundColor3 = self.Themes[self.Theme].Accent
 	button.Text = text
 	button.TextColor3 = Color3.new(1, 1, 1)
@@ -562,7 +564,7 @@ function ModernUILibrary:CreateButton(parent, text, callback, size)
 				math.floor(self.Themes[self.Theme].Accent.G * 255 * 1.2),
 				math.floor(self.Themes[self.Theme].Accent.B * 255 * 1.2)
 			),
-			Size = size and size or UDim2.new(1, -15, 0, 35)
+			Size = size and size or UDim2.new(1, -5, 0, 35)
 		})
 		tween:Play()
 	end)
@@ -571,7 +573,7 @@ function ModernUILibrary:CreateButton(parent, text, callback, size)
 		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local tween = game:GetService("TweenService"):Create(button, tweenInfo, {
 			BackgroundColor3 = self.Themes[self.Theme].Accent,
-			Size = size or UDim2.new(1, -20, 0, 35)
+			Size = size or UDim2.new(1, -10, 0, 35)
 		})
 		tween:Play()
 	end)
@@ -611,15 +613,15 @@ end
 function ModernUILibrary:CreateCheckbox(parent, text, default, callback)
 	local container = Instance.new("Frame")
 	container.Name = "CheckboxContainer"
-	container.Size = UDim2.new(1, -20, 0, 30)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Size = UDim2.new(1, -10, 0, 30)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
 	container.Parent = parent
 	
 	local checkbox = Instance.new("TextButton")
 	checkbox.Name = "Checkbox"
 	checkbox.Size = UDim2.new(0, 22, 0, 22)
-	checkbox.Position = UDim2.new(0, 5, 0.5, -11)
+	checkbox.Position = UDim2.new(0, 0, 0.5, -11)
 	checkbox.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	checkbox.Text = ""
 	checkbox.AutoButtonColor = false
@@ -646,8 +648,8 @@ function ModernUILibrary:CreateCheckbox(parent, text, default, callback)
 	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
-	label.Size = UDim2.new(1, -35, 1, 0)
-	label.Position = UDim2.new(0, 32, 0, 0)
+	label.Size = UDim2.new(1, -30, 1, 0)
+	label.Position = UDim2.new(0, 30, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -731,15 +733,15 @@ end
 function ModernUILibrary:CreateSlider(parent, text, min, max, default, callback)
 	local container = Instance.new("Frame")
 	container.Name = "SliderContainer"
-	container.Size = UDim2.new(1, -20, 0, 60)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Size = UDim2.new(1, -10, 0, 60)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
 	container.Parent = parent
 	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 5, 0, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text .. ": " .. tostring(default or min)
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -750,8 +752,8 @@ function ModernUILibrary:CreateSlider(parent, text, min, max, default, callback)
 	
 	local track = Instance.new("Frame")
 	track.Name = "Track"
-	track.Size = UDim2.new(1, -10, 0, 6)
-	track.Position = UDim2.new(0, 5, 0, 30)
+	track.Size = UDim2.new(1, 0, 0, 6)
+	track.Position = UDim2.new(0, 0, 0, 30)
 	track.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	track.Parent = container
 	
@@ -849,15 +851,15 @@ end
 function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, size)
 	local container = Instance.new("Frame")
 	container.Name = "TextFieldContainer"
-	container.Size = size or UDim2.new(1, -20, 0, 50)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Size = size or UDim2.new(1, -10, 0, 50)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
 	container.Parent = parent
 	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 5, 0, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -868,8 +870,8 @@ function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, si
 	
 	local textBox = Instance.new("TextBox")
 	textBox.Name = "TextBox"
-	textBox.Size = UDim2.new(1, -10, 0, 30)
-	textBox.Position = UDim2.new(0, 5, 0, 25)
+	textBox.Size = UDim2.new(1, 0, 0, 30)
+	textBox.Position = UDim2.new(0, 0, 0, 25)
 	textBox.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	textBox.TextColor3 = self.Themes[self.Theme].Text
 	textBox.PlaceholderText = placeholder or ""
@@ -897,8 +899,7 @@ function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, si
 				math.floor(self.Themes[self.Theme].Secondary.R * 255 * 1.1),
 				math.floor(self.Themes[self.Theme].Secondary.G * 255 * 1.1),
 				math.floor(self.Themes[self.Theme].Secondary.B * 255 * 1.1)
-			),
-			Size = UDim2.new(1, -8, 0, 30)
+			)
 		})
 		tween:Play()
 	end)
@@ -906,8 +907,7 @@ function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, si
 	textBox.FocusLost:Connect(function()
 		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local tween = game:GetService("TweenService"):Create(textBox, tweenInfo, {
-			BackgroundColor3 = self.Themes[self.Theme].Secondary,
-			Size = UDim2.new(1, -10, 0, 30)
+			BackgroundColor3 = self.Themes[self.Theme].Secondary
 		})
 		tween:Play()
 		
@@ -930,8 +930,8 @@ end
 function ModernUILibrary:CreateDropdown(parent, text, options, default, callback)
 	local container = Instance.new("Frame")
 	container.Name = "DropdownContainer"
-	container.Size = UDim2.new(1, -20, 0, 70)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Size = UDim2.new(1, -10, 0, 70)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
 	container.ClipsDescendants = true
 	container.Parent = parent
@@ -939,7 +939,7 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 5, 0, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -950,8 +950,8 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	
 	local dropdownButton = Instance.new("TextButton")
 	dropdownButton.Name = "DropdownButton"
-	dropdownButton.Size = UDim2.new(1, -10, 0, 30)
-	dropdownButton.Position = UDim2.new(0, 5, 0, 25)
+	dropdownButton.Size = UDim2.new(1, 0, 0, 30)
+	dropdownButton.Position = UDim2.new(0, 0, 0, 25)
 	dropdownButton.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	dropdownButton.Text = options[default or 1] or "Select..."
 	dropdownButton.TextColor3 = self.Themes[self.Theme].Text
@@ -981,12 +981,13 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	
 	local dropdownFrame = Instance.new("ScrollingFrame")
 	dropdownFrame.Name = "DropdownFrame"
-	dropdownFrame.Size = UDim2.new(1, -10, 0, 0)
-	dropdownFrame.Position = UDim2.new(0, 5, 0, 55)
+	dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
+	dropdownFrame.Position = UDim2.new(0, 0, 0, 55)
 	dropdownFrame.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	dropdownFrame.ScrollBarThickness = 3
 	dropdownFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
 	dropdownFrame.Visible = false
+	dropdownFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	dropdownFrame.Parent = container
 	
 	local dropdownCorner = Instance.new("UICorner")
@@ -997,6 +998,13 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	layout.Padding = UDim.new(0, 2)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = dropdownFrame
+	
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 2)
+	padding.PaddingRight = UDim.new(0, 2)
+	padding.PaddingTop = UDim.new(0, 2)
+	padding.PaddingBottom = UDim.new(0, 2)
+	padding.Parent = dropdownFrame
 	
 	local isOpen = false
 	local selectedOption = options[default or 1]
@@ -1009,7 +1017,7 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 		if isOpen then
 			dropdownFrame.Visible = true
 			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, -10, 0, math.min(#options * 32, 150))
+				Size = UDim2.new(1, 0, 0, math.min(#options * 32, 150))
 			})
 			tween:Play()
 			
@@ -1019,7 +1027,7 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 			arrowTween:Play()
 		else
 			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, -10, 0, 0)
+				Size = UDim2.new(1, 0, 0, 0)
 			})
 			tween:Play()
 			
@@ -1061,7 +1069,8 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	for i, option in ipairs(options) do
 		local optionButton = Instance.new("TextButton")
 		optionButton.Name = "Option_" .. option
-		optionButton.Size = UDim2.new(1, 0, 0, 30)
+		optionButton.Size = UDim2.new(1, -4, 0, 30)
+		optionButton.Position = UDim2.new(0, 2, 0, 0)
 		optionButton.BackgroundColor3 = self.Themes[self.Theme].Background
 		optionButton.Text = option
 		optionButton.TextColor3 = self.Themes[self.Theme].Text
@@ -1121,15 +1130,15 @@ end
 function ModernUILibrary:CreateModeSetting(parent, text, modes, default, callback)
 	local container = Instance.new("Frame")
 	container.Name = "ModeSettingContainer"
-	container.Size = UDim2.new(1, -20, 0, 60)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Size = UDim2.new(1, -10, 0, 60)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
 	container.Parent = parent
 	
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 5, 0, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -1140,8 +1149,8 @@ function ModernUILibrary:CreateModeSetting(parent, text, modes, default, callbac
 	
 	local modeContainer = Instance.new("Frame")
 	modeContainer.Name = "ModeContainer"
-	modeContainer.Size = UDim2.new(1, -10, 0, 30)
-	modeContainer.Position = UDim2.new(0, 5, 0, 25)
+	modeContainer.Size = UDim2.new(1, 0, 0, 30)
+	modeContainer.Position = UDim2.new(0, 0, 0, 25)
 	modeContainer.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	modeContainer.Parent = container
 	
@@ -1229,192 +1238,132 @@ end
 
 -- НОВЫЙ LIST SETTING (выпадающий список с настройками)
 function ModernUILibrary:CreateListSetting(parent, text, options, default, callback)
+	return self:CreateDropdown(parent, text, options, default, callback)
+end
+
+-- НОВЫЙ ПРОФИЛЬ
+function ModernUILibrary:CreateProfile(parent, userData)
 	local container = Instance.new("Frame")
-	container.Name = "ListSettingContainer"
-	container.Size = UDim2.new(1, -20, 0, 60)
-	container.Position = UDim2.new(0, 10, 0, 0)
+	container.Name = "ProfileContainer"
+	container.Size = UDim2.new(1, -10, 0, 100)
+	container.Position = UDim2.new(0, 5, 0, 0)
 	container.BackgroundTransparency = 1
-	container.ClipsDescendants = true
 	container.Parent = parent
 	
-	local label = Instance.new("TextLabel")
-	label.Name = "Label"
-	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 5, 0, 0)
-	label.BackgroundTransparency = 1
-	label.Text = text
-	label.TextColor3 = self.Themes[self.Theme].Text
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
-	label.Parent = container
+	-- Аватарка
+	local avatarFrame = Instance.new("Frame")
+	avatarFrame.Name = "AvatarFrame"
+	avatarFrame.Size = UDim2.new(0, 80, 0, 80)
+	avatarFrame.Position = UDim2.new(0, 0, 0, 0)
+	avatarFrame.BackgroundColor3 = self.Themes[self.Theme].Secondary
+	avatarFrame.Parent = container
 	
-	local dropdownButton = Instance.new("TextButton")
-	dropdownButton.Name = "DropdownButton"
-	dropdownButton.Size = UDim2.new(1, -10, 0, 30)
-	dropdownButton.Position = UDim2.new(0, 5, 0, 25)
-	dropdownButton.BackgroundColor3 = self.Themes[self.Theme].Secondary
-	dropdownButton.Text = options[default or 1] or "Select..."
-	dropdownButton.TextColor3 = self.Themes[self.Theme].Text
-	dropdownButton.Font = Enum.Font.Gotham
-	dropdownButton.TextSize = 14
-	dropdownButton.AutoButtonColor = false
-	dropdownButton.Parent = container
+	local avatarCorner = Instance.new("UICorner")
+	avatarCorner.CornerRadius = UDim.new(0, 8)
+	avatarCorner.Parent = avatarFrame
 	
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 6)
-	corner.Parent = dropdownButton
+	local avatarStroke = Instance.new("UIStroke")
+	avatarStroke.Color = self.Themes[self.Theme].Border
+	avatarStroke.Thickness = 2
+	avatarStroke.Parent = avatarFrame
 	
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = self.Themes[self.Theme].Border
-	stroke.Thickness = 1
-	stroke.Parent = dropdownButton
+	local avatarImage = Instance.new("ImageLabel")
+	avatarImage.Name = "AvatarImage"
+	avatarImage.Size = UDim2.new(1, -10, 1, -10)
+	avatarImage.Position = UDim2.new(0, 5, 0, 5)
+	avatarImage.BackgroundTransparency = 1
+	avatarImage.Image = userData.Avatar or "rbxasset://textures/ui/GuiImagePlaceholder.png"
+	avatarImage.Parent = avatarFrame
 	
-	-- Стрелка вниз
-	local arrow = Instance.new("ImageLabel")
-	arrow.Name = "Arrow"
-	arrow.Size = UDim2.new(0, 16, 0, 16)
-	arrow.Position = UDim2.new(1, -25, 0.5, -8)
-	arrow.BackgroundTransparency = 1
-	arrow.Image = "rbxassetid://6031090990"
-	arrow.ImageColor3 = self.Themes[self.Theme].Text
-	arrow.Rotation = 0
-	arrow.Parent = dropdownButton
+	local avatarCornerInner = Instance.new("UICorner")
+	avatarCornerInner.CornerRadius = UDim.new(0, 6)
+	avatarCornerInner.Parent = avatarImage
 	
-	local dropdownFrame = Instance.new("ScrollingFrame")
-	dropdownFrame.Name = "DropdownFrame"
-	dropdownFrame.Size = UDim2.new(1, -10, 0, 0)
-	dropdownFrame.Position = UDim2.new(0, 5, 0, 55)
-	dropdownFrame.BackgroundColor3 = self.Themes[self.Theme].Secondary
-	dropdownFrame.ScrollBarThickness = 3
-	dropdownFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
-	dropdownFrame.Visible = false
-	dropdownFrame.Parent = container
+	-- Информация пользователя
+	local infoFrame = Instance.new("Frame")
+	infoFrame.Name = "InfoFrame"
+	infoFrame.Size = UDim2.new(1, -90, 1, 0)
+	infoFrame.Position = UDim2.new(0, 90, 0, 0)
+	infoFrame.BackgroundTransparency = 1
+	infoFrame.Parent = container
 	
-	local dropdownCorner = Instance.new("UICorner")
-	dropdownCorner.CornerRadius = UDim.new(0, 6)
-	dropdownCorner.Parent = dropdownFrame
+	-- Никнейм
+	local usernameLabel = Instance.new("TextLabel")
+	usernameLabel.Name = "UsernameLabel"
+	usernameLabel.Size = UDim2.new(1, 0, 0, 25)
+	usernameLabel.Position = UDim2.new(0, 0, 0, 0)
+	usernameLabel.BackgroundTransparency = 1
+	usernameLabel.Text = userData.Username or "Player"
+	usernameLabel.TextColor3 = self.Themes[self.Theme].Text
+	usernameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	usernameLabel.Font = Enum.Font.GothamBold
+	usernameLabel.TextSize = 16
+	usernameLabel.Parent = infoFrame
 	
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 2)
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = dropdownFrame
+	-- Роль
+	local roleLabel = Instance.new("TextLabel")
+	roleLabel.Name = "RoleLabel"
+	roleLabel.Size = UDim2.new(1, 0, 0, 20)
+	roleLabel.Position = UDim2.new(0, 0, 0, 25)
+	roleLabel.BackgroundTransparency = 1
+	roleLabel.Text = "Role: " .. (userData.Role or "User")
+	roleLabel.TextColor3 = self.Themes[self.Theme].Accent
+	roleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	roleLabel.Font = Enum.Font.Gotham
+	roleLabel.TextSize = 14
+	roleLabel.Parent = infoFrame
 	
-	local isOpen = false
-	local selectedOption = options[default or 1]
+	-- Дата истечения
+	local tillLabel = Instance.new("TextLabel")
+	tillLabel.Name = "TillLabel"
+	tillLabel.Size = UDim2.new(1, 0, 0, 20)
+	tillLabel.Position = UDim2.new(0, 0, 0, 45)
+	tillLabel.BackgroundTransparency = 1
+	tillLabel.Text = "Till: " .. (userData.Till or "Never")
+	tillLabel.TextColor3 = self.Themes[self.Theme].Text
+	tillLabel.TextXAlignment = Enum.TextXAlignment.Left
+	tillLabel.Font = Enum.Font.Gotham
+	tillLabel.TextSize = 12
+	tillLabel.Parent = infoFrame
 	
-	local function toggleDropdown()
-		isOpen = not isOpen
-		
-		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		
-		if isOpen then
-			dropdownFrame.Visible = true
-			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, -10, 0, math.min(#options * 32, 150))
-			})
-			tween:Play()
-			
-			local arrowTween = game:GetService("TweenService"):Create(arrow, tweenInfo, {
-				Rotation = 180
-			})
-			arrowTween:Play()
-		else
-			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, -10, 0, 0)
-			})
-			tween:Play()
-			
-			local arrowTween = game:GetService("TweenService"):Create(arrow, tweenInfo, {
-				Rotation = 0
-			})
-			arrowTween:Play()
-			
-			tween.Completed:Connect(function()
-				dropdownFrame.Visible = false
-			end)
-		end
-	end
-	
-	dropdownButton.MouseButton1Click:Connect(toggleDropdown)
-	
-	-- Анимация при наведении на кнопку
-	dropdownButton.MouseEnter:Connect(function()
-		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local tween = game:GetService("TweenService"):Create(dropdownButton, tweenInfo, {
-			BackgroundColor3 = Color3.fromRGB(
-				math.floor(self.Themes[self.Theme].Secondary.R * 255 * 1.1),
-				math.floor(self.Themes[self.Theme].Secondary.G * 255 * 1.1),
-				math.floor(self.Themes[self.Theme].Secondary.B * 255 * 1.1)
-			)
-		})
-		tween:Play()
-	end)
-	
-	dropdownButton.MouseLeave:Connect(function()
-		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local tween = game:GetService("TweenService"):Create(dropdownButton, tweenInfo, {
-			BackgroundColor3 = self.Themes[self.Theme].Secondary
-		})
-		tween:Play()
-	end)
-	
-	-- Создаем опции
-	for i, option in ipairs(options) do
-		local optionButton = Instance.new("TextButton")
-		optionButton.Name = "Option_" .. option
-		optionButton.Size = UDim2.new(1, 0, 0, 30)
-		optionButton.BackgroundColor3 = self.Themes[self.Theme].Background
-		optionButton.Text = option
-		optionButton.TextColor3 = self.Themes[self.Theme].Text
-		optionButton.Font = Enum.Font.Gotham
-		optionButton.TextSize = 12
-		optionButton.AutoButtonColor = false
-		optionButton.LayoutOrder = i
-		optionButton.Parent = dropdownFrame
-		
-		local optionCorner = Instance.new("UICorner")
-		optionCorner.CornerRadius = UDim.new(0, 4)
-		optionCorner.Parent = optionButton
-		
-		-- Анимация при наведении на опцию
-		optionButton.MouseEnter:Connect(function()
-			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-			local tween = game:GetService("TweenService"):Create(optionButton, tweenInfo, {
-				BackgroundColor3 = self.Themes[self.Theme].Accent,
-				TextColor3 = Color3.new(1, 1, 1)
-			})
-			tween:Play()
-		end)
-		
-		optionButton.MouseLeave:Connect(function()
-			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-			local tween = game:GetService("TweenService"):Create(optionButton, tweenInfo, {
-				BackgroundColor3 = self.Themes[self.Theme].Background,
-				TextColor3 = self.Themes[self.Theme].Text
-			})
-			tween:Play()
-		end)
-		
-		optionButton.MouseButton1Click:Connect(function()
-			selectedOption = option
-			dropdownButton.Text = option
-			toggleDropdown()
-			if callback then
-				callback(option, i)
-			end
-		end)
-	end
+	-- Статус
+	local statusLabel = Instance.new("TextLabel")
+	statusLabel.Name = "StatusLabel"
+	statusLabel.Size = UDim2.new(1, 0, 0, 20)
+	statusLabel.Position = UDim2.new(0, 0, 0, 65)
+	statusLabel.BackgroundTransparency = 1
+	statusLabel.Text = userData.Status or "Online"
+	statusLabel.TextColor3 = self.Themes[self.Theme].Success
+	statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+	statusLabel.Font = Enum.Font.Gotham
+	statusLabel.TextSize = 12
+	statusLabel.Parent = infoFrame
 	
 	return {
-		SetValue = function(value)
-			if table.find(options, value) then
-				selectedOption = value
-				dropdownButton.Text = value
+		UpdateData = function(newData)
+			if newData.Avatar then
+				avatarImage.Image = newData.Avatar
 			end
-		end,
-		GetValue = function()
-			return selectedOption
+			if newData.Username then
+				usernameLabel.Text = newData.Username
+			end
+			if newData.Role then
+				roleLabel.Text = "Role: " .. newData.Role
+			end
+			if newData.Till then
+				tillLabel.Text = "Till: " .. newData.Till
+			end
+			if newData.Status then
+				statusLabel.Text = newData.Status
+				-- Меняем цвет в зависимости от статуса
+				if newData.Status == "Online" then
+					statusLabel.TextColor3 = self.Themes[self.Theme].Success
+				elseif newData.Status == "Offline" then
+					statusLabel.TextColor3 = self.Themes[self.Theme].Error
+				elseif newData.Status == "Away" then
+					statusLabel.TextColor3 = self.Themes[self.Theme].Warning
+				end
+			end
 		end
 	}
 end
