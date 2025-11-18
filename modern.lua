@@ -429,7 +429,7 @@ function ModernUILibrary:AddCategory(name)
 	categoryButton.Name = name .. "Button"
 	categoryButton.Size = UDim2.new(1, -10, 0, 35)
 	
-	-- ИСПРАВЛЕНО: Правильное позиционирование кнопок
+	-- Правильное позиционирование кнопок
 	local buttonCount = #self.CategoryButtons
 	categoryButton.Position = UDim2.new(0, 5, 0, buttonCount * 40 + 5)
 	
@@ -445,7 +445,7 @@ function ModernUILibrary:AddCategory(name)
 	corner.CornerRadius = UDim.new(0, 4)
 	corner.Parent = categoryButton
 	
-	-- Анимация при наведении на кнопку категории
+	-- Анимация при наведении
 	categoryButton.MouseEnter:Connect(function()
 		if self.CurrentCategory ~= name then
 			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -477,7 +477,7 @@ function ModernUILibrary:AddCategory(name)
 	categoryFrame.BackgroundTransparency = 1
 	categoryFrame.ScrollBarThickness = 3
 	categoryFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
-	categoryFrame.Visible = false
+	categoryFrame.Visible = false  -- ВСЕ фреймы изначально скрыты
 	categoryFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	categoryFrame.Parent = self.ContentFrame
 	
@@ -492,22 +492,56 @@ function ModernUILibrary:AddCategory(name)
 	padding.PaddingRight = UDim.new(0, 5)
 	padding.Parent = categoryFrame
 	
-	-- ДОБАВЛЯЕМ в таблицы ПЕРЕД подключением событий
+	-- Добавляем в таблицы
+	table.insert(self.Categories, name)
 	self.Categories[name] = categoryFrame
 	self.CategoryButtons[name] = categoryButton
 	
+	-- Обработчик клика
 	categoryButton.MouseButton1Click:Connect(function()
 		self:SwitchCategory(name)
 	end)
 	
-	-- Автоматически выбираем первую вкладку
+	-- Автоматически выбираем первую вкладку при создании
 	if not self.CurrentCategory then
-		self:SwitchCategory(name)
+		self.CurrentCategory = name
+		categoryFrame.Visible = true
+		categoryButton.BackgroundColor3 = self.Themes[self.Theme].Accent
+	else
+		categoryFrame.Visible = false
+		categoryButton.BackgroundColor3 = self.Themes[self.Theme].Background
 	end
 	
 	return categoryFrame
 end
 
+function ModernUILibrary:SwitchCategory(name)
+	-- Скрываем текущую вкладку
+	if self.CurrentCategory and self.Categories[self.CurrentCategory] then
+		self.Categories[self.CurrentCategory].Visible = false
+		if self.CategoryButtons[self.CurrentCategory] then
+			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			local tween = game:GetService("TweenService"):Create(self.CategoryButtons[self.CurrentCategory], tweenInfo, {
+				BackgroundColor3 = self.Themes[self.Theme].Background
+			})
+			tween:Play()
+		end
+	end
+	
+	-- Показываем новую вкладку
+	self.CurrentCategory = name
+	if self.Categories[name] then
+		self.Categories[name].Visible = true
+	end
+	
+	if self.CategoryButtons[name] then
+		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween = game:GetService("TweenService"):Create(self.CategoryButtons[name], tweenInfo, {
+			BackgroundColor3 = self.Themes[self.Theme].Accent
+		})
+		tween:Play()
+	end
+end
 function ModernUILibrary:SwitchCategory(name)
 	if self.CurrentCategory then
 		self.Categories[self.CurrentCategory].Visible = false
