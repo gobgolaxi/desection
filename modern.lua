@@ -428,7 +428,11 @@ function ModernUILibrary:AddCategory(name)
 	local categoryButton = Instance.new("TextButton")
 	categoryButton.Name = name .. "Button"
 	categoryButton.Size = UDim2.new(1, -10, 0, 35)
-	categoryButton.Position = UDim2.new(0, 5, 0, #self.CategoryButtons * 40 + 5)
+	
+	-- ИСПРАВЛЕНО: Правильное позиционирование кнопок
+	local buttonCount = #self.CategoryButtons
+	categoryButton.Position = UDim2.new(0, 5, 0, buttonCount * 40 + 5)
+	
 	categoryButton.BackgroundColor3 = self.Themes[self.Theme].Background
 	categoryButton.Text = name
 	categoryButton.TextColor3 = self.Themes[self.Theme].Text
@@ -488,6 +492,7 @@ function ModernUILibrary:AddCategory(name)
 	padding.PaddingRight = UDim.new(0, 5)
 	padding.Parent = categoryFrame
 	
+	-- ДОБАВЛЯЕМ в таблицы ПЕРЕД подключением событий
 	self.Categories[name] = categoryFrame
 	self.CategoryButtons[name] = categoryButton
 	
@@ -495,11 +500,31 @@ function ModernUILibrary:AddCategory(name)
 		self:SwitchCategory(name)
 	end)
 	
+	-- Автоматически выбираем первую вкладку
 	if not self.CurrentCategory then
 		self:SwitchCategory(name)
 	end
 	
 	return categoryFrame
+end
+
+function ModernUILibrary:SwitchCategory(name)
+	if self.CurrentCategory then
+		self.Categories[self.CurrentCategory].Visible = false
+		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween = game:GetService("TweenService"):Create(self.CategoryButtons[self.CurrentCategory], tweenInfo, {
+			BackgroundColor3 = self.Themes[self.Theme].Background
+		})
+		tween:Play()
+	end
+	
+	self.CurrentCategory = name
+	self.Categories[name].Visible = true
+	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = game:GetService("TweenService"):Create(self.CategoryButtons[name], tweenInfo, {
+		BackgroundColor3 = self.Themes[self.Theme].Accent
+	})
+	tween:Play()
 end
 
 function ModernUILibrary:SwitchCategory(name)
