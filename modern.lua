@@ -1,6 +1,6 @@
 -- Modern UI Library for Roblox Studio
 -- Author: Assistant
--- Version: 1.0
+-- Version: 1.1
 
 local ModernUILibrary = {}
 ModernUILibrary.__index = ModernUILibrary
@@ -82,14 +82,24 @@ function ModernUILibrary:CreateTopBar()
 	self.TopBar.BorderSizePixel = 0
 	self.TopBar.Parent = self.MainFrame
 	
+	-- Убираем закругление нижних углов топбара
 	local topBarCorner = Instance.new("UICorner")
 	topBarCorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	topBarCorner.Parent = self.TopBar
 	
+	-- Маска для скрытия нижних закруглений
+	local topBarMask = Instance.new("Frame")
+	topBarMask.Name = "TopBarMask"
+	topBarMask.Size = UDim2.new(1, 0, 1, self.CornerRadius)
+	topBarMask.Position = UDim2.new(0, 0, 0, 0)
+	topBarMask.BackgroundColor3 = self.Themes[self.Theme].Secondary
+	topBarMask.BorderSizePixel = 0
+	topBarMask.Parent = self.TopBar
+	
 	-- Заголовок окна
 	self.TitleLabel = Instance.new("TextLabel")
 	self.TitleLabel.Name = "TitleLabel"
-	self.TitleLabel.Size = UDim2.new(0.6, 0, 1, 0)
+	self.TitleLabel.Size = UDim2.new(0.4, 0, 1, 0)
 	self.TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 	self.TitleLabel.BackgroundTransparency = 1
 	self.TitleLabel.Text = self.WindowTitle
@@ -98,6 +108,22 @@ function ModernUILibrary:CreateTopBar()
 	self.TitleLabel.Font = Enum.Font.Gotham
 	self.TitleLabel.TextSize = 14
 	self.TitleLabel.Parent = self.TopBar
+	
+	-- Кнопка переключения темы
+	self.ThemeButton = Instance.new("TextButton")
+	self.ThemeButton.Name = "ThemeButton"
+	self.ThemeButton.Size = UDim2.new(0, 30, 0, 30)
+	self.ThemeButton.Position = UDim2.new(1, -105, 0.5, -15)
+	self.ThemeButton.BackgroundColor3 = self.Themes[self.Theme].Accent
+	self.ThemeButton.Text = "🌓"
+	self.ThemeButton.TextColor3 = Color3.new(1, 1, 1)
+	self.ThemeButton.Font = Enum.Font.GothamBold
+	self.ThemeButton.TextSize = 14
+	self.ThemeButton.Parent = self.TopBar
+	
+	local themeCorner = Instance.new("UICorner")
+	themeCorner.CornerRadius = UDim.new(0, 4)
+	themeCorner.Parent = self.ThemeButton
 	
 	-- Кнопка сворачивания
 	self.MinimizeButton = Instance.new("TextButton")
@@ -135,6 +161,10 @@ function ModernUILibrary:CreateTopBar()
 	self:Dragify(self.TopBar)
 	
 	-- Обработчики событий
+	self.ThemeButton.MouseButton1Click:Connect(function()
+		self:ToggleTheme()
+	end)
+	
 	self.MinimizeButton.MouseButton1Click:Connect(function()
 		self:ToggleMinimize()
 	end)
@@ -170,25 +200,27 @@ end
 function ModernUILibrary:CreateResizeHandle()
 	self.ResizeHandle = Instance.new("Frame")
 	self.ResizeHandle.Name = "ResizeHandle"
-	self.ResizeHandle.Size = UDim2.new(0, 15, 0, 15)
-	self.ResizeHandle.Position = UDim2.new(1, -15, 1, -15)
-	self.ResizeHandle.BackgroundTransparency = 0.8
+	self.ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
+	self.ResizeHandle.Position = UDim2.new(1, -20, 1, -20)
+	self.ResizeHandle.BackgroundTransparency = 0.5
 	self.ResizeHandle.BackgroundColor3 = self.Themes[self.Theme].Accent
 	self.ResizeHandle.BorderSizePixel = 0
+	self.ResizeHandle.ZIndex = 10
 	self.ResizeHandle.Parent = self.MainFrame
 	
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 4)
 	corner.Parent = self.ResizeHandle
 	
-	-- Иконка треугольника
+	-- Иконка треугольника (улучшенная)
 	local triangle = Instance.new("ImageLabel")
 	triangle.Name = "Triangle"
-	triangle.Size = UDim2.new(0, 8, 0, 8)
-	triangle.Position = UDim2.new(0.5, -4, 0.5, -4)
+	triangle.Size = UDim2.new(0, 12, 0, 12)
+	triangle.Position = UDim2.new(0.5, -6, 0.5, -6)
 	triangle.BackgroundTransparency = 1
-	triangle.Image = "rbxassetid://5533219382"
-	triangle.ImageColor3 = self.Themes[self.Theme].Text
+	triangle.Image = "rbxassetid://6031094678" -- Более четкий треугольник
+	triangle.ImageColor3 = Color3.new(1, 1, 1)
+	triangle.Rotation = 45
 	triangle.Parent = self.ResizeHandle
 	
 	self:MakeResizable()
@@ -216,9 +248,12 @@ function ModernUILibrary:Dragify(frame)
 			dragToggle = true
 			dragStart = input.Position
 			startPos = self.MainFrame.Position
-			input.Changed:Connect(function()
+			
+			local connection
+			connection = input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragToggle = false
+					connection:Disconnect()
 				end
 			end)
 		end
@@ -243,15 +278,18 @@ function ModernUILibrary:MakeResizable()
 			resizing = true
 			startPos = input.Position
 			startSize = self.MainFrame.Size
-			input.Changed:Connect(function()
+			
+			local connection
+			connection = input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					resizing = false
+					connection:Disconnect()
 				end
 			end)
 		end
 	end)
 	
-	self.ResizeHandle.InputChanged:Connect(function(input)
+	game:GetService("UserInputService").InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement then
 			if resizing then
 				local delta = input.Position - startPos
@@ -267,6 +305,75 @@ function ModernUILibrary:MakeResizable()
 	end)
 end
 
+function ModernUILibrary:ToggleTheme()
+	-- Переключение между темами
+	if self.Theme == "Dark" then
+		self.Theme = "Light"
+	else
+		self.Theme = "Dark"
+	end
+	
+	-- Обновляем цвета интерфейса
+	self:UpdateTheme()
+end
+
+function ModernUILibrary:UpdateTheme()
+	local theme = self.Themes[self.Theme]
+	
+	-- Обновляем основные цвета
+	self.MainFrame.BackgroundColor3 = theme.Background
+	self.TopBar.BackgroundColor3 = theme.Secondary
+	self.TopBar:FindFirstChild("TopBarMask").BackgroundColor3 = theme.Secondary
+	self.TitleLabel.TextColor3 = theme.Text
+	
+	-- Обновляем кнопки
+	self.ThemeButton.BackgroundColor3 = theme.Accent
+	self.MinimizeButton.BackgroundColor3 = theme.Accent
+	
+	-- Обновляем обводку
+	self.MainFrame.UIStroke.Color = theme.Border
+	
+	-- Обновляем категории
+	self.CategoriesFrame.BackgroundColor3 = theme.Secondary
+	
+	-- Обновляем кнопки категорий
+	for name, button in pairs(self.CategoryButtons) do
+		if name == self.CurrentCategory then
+			button.BackgroundColor3 = theme.Accent
+		else
+			button.BackgroundColor3 = theme.Background
+		end
+		button.TextColor3 = theme.Text
+	end
+	
+	-- Обновляем элементы в категориях
+	for _, categoryFrame in pairs(self.Categories) do
+		self:UpdateCategoryTheme(categoryFrame, theme)
+	end
+end
+
+function ModernUILibrary:UpdateCategoryTheme(categoryFrame, theme)
+	for _, child in ipairs(categoryFrame:GetDescendants()) do
+		if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+			if child.Name == "Checkbox" or child.Name == "DropdownButton" or child.Name == "TextBox" then
+				child.BackgroundColor3 = theme.Secondary
+				child.TextColor3 = theme.Text
+				if child:FindFirstChild("UIStroke") then
+					child.UIStroke.Color = theme.Border
+				end
+			elseif child.BackgroundTransparency == 1 then
+				child.TextColor3 = theme.Text
+			end
+		elseif child:IsA("Frame") then
+			if child.Name == "Track" then
+				child.BackgroundColor3 = theme.Secondary
+			elseif child.Name == "Fill" then
+				child.BackgroundColor3 = theme.Accent
+			end
+		end
+	end
+end
+
 function ModernUILibrary:ToggleMinimize()
 	self.IsMinimized = not self.IsMinimized
 	
@@ -277,6 +384,9 @@ function ModernUILibrary:ToggleMinimize()
 			Size = UDim2.new(0, self.MainFrame.Size.X.Offset, 0, 40)
 		})
 		tween:Play()
+		
+		-- Показываем закругления у топбара при сворачивании
+		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	else
 		-- Анимация разворачивания
 		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -284,6 +394,9 @@ function ModernUILibrary:ToggleMinimize()
 			Size = self.WindowSize
 		})
 		tween:Play()
+		
+		-- Убираем нижние закругления у топбара при разворачивании
+		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	end
 end
 
@@ -321,6 +434,11 @@ function ModernUILibrary:AddCategory(name)
 	layout.Padding = UDim.new(0, 10)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Parent = categoryFrame
+	
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 5)
+	padding.PaddingLeft = UDim.new(0, 5)
+	padding.Parent = categoryFrame
 	
 	self.Categories[name] = categoryFrame
 	self.CategoryButtons[name] = categoryButton
@@ -396,7 +514,7 @@ function ModernUILibrary:CreateCheckbox(parent, text, default, callback)
 	local checkbox = Instance.new("TextButton")
 	checkbox.Name = "Checkbox"
 	checkbox.Size = UDim2.new(0, 20, 0, 20)
-	checkbox.Position = UDim2.new(0, 0, 0, 0)
+	checkbox.Position = UDim2.new(0, 5, 0, 0) -- Сдвиг на 5 пикселей вправо
 	checkbox.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	checkbox.Text = ""
 	checkbox.Parent = container
@@ -423,7 +541,7 @@ function ModernUILibrary:CreateCheckbox(parent, text, default, callback)
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, -30, 1, 0)
-	label.Position = UDim2.new(0, 25, 0, 0)
+	label.Position = UDim2.new(0, 30, 0, 0) -- Сдвиг на 5 пикселей вправо
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -464,7 +582,7 @@ function ModernUILibrary:CreateSlider(parent, text, min, max, default, callback)
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 0, 0, 0)
+	label.Position = UDim2.new(0, 5, 0, 0) -- Сдвиг на 5 пикселей вправо
 	label.BackgroundTransparency = 1
 	label.Text = text .. ": " .. tostring(default or min)
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -475,8 +593,8 @@ function ModernUILibrary:CreateSlider(parent, text, min, max, default, callback)
 	
 	local track = Instance.new("Frame")
 	track.Name = "Track"
-	track.Size = UDim2.new(1, 0, 0, 6)
-	track.Position = UDim2.new(0, 0, 0, 30)
+	track.Size = UDim2.new(1, -10, 0, 6) -- Учитываем сдвиг
+	track.Position = UDim2.new(0, 5, 0, 30) -- Сдвиг на 5 пикселей вправо
 	track.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	track.Parent = container
 	
@@ -522,9 +640,12 @@ function ModernUILibrary:CreateSlider(parent, text, min, max, default, callback)
 	thumb.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			input.Changed:Connect(function()
+			
+			local connection
+			connection = input.Changed:Connect(function()
 				if input.UserInputState == Enum.UserInputState.End then
 					dragging = false
+					connection:Disconnect()
 				end
 			end)
 		end
@@ -567,7 +688,7 @@ function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, si
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 0, 0, 0)
+	label.Position = UDim2.new(0, 5, 0, 0) -- Сдвиг на 5 пикселей вправо
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -578,8 +699,8 @@ function ModernUILibrary:CreateTextField(parent, text, placeholder, callback, si
 	
 	local textBox = Instance.new("TextBox")
 	textBox.Name = "TextBox"
-	textBox.Size = UDim2.new(1, 0, 0, 30)
-	textBox.Position = UDim2.new(0, 0, 0, 25)
+	textBox.Size = UDim2.new(1, -10, 0, 30) -- Учитываем сдвиг
+	textBox.Position = UDim2.new(0, 5, 0, 25) -- Сдвиг на 5 пикселей вправо
 	textBox.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	textBox.TextColor3 = self.Themes[self.Theme].Text
 	textBox.PlaceholderText = placeholder or ""
@@ -627,7 +748,7 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
 	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 0, 0, 0)
+	label.Position = UDim2.new(0, 5, 0, 0) -- Сдвиг на 5 пикселей вправо
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = self.Themes[self.Theme].Text
@@ -638,8 +759,8 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	
 	local dropdownButton = Instance.new("TextButton")
 	dropdownButton.Name = "DropdownButton"
-	dropdownButton.Size = UDim2.new(1, 0, 0, 30)
-	dropdownButton.Position = UDim2.new(0, 0, 0, 25)
+	dropdownButton.Size = UDim2.new(1, -10, 0, 30) -- Учитываем сдвиг
+	dropdownButton.Position = UDim2.new(0, 5, 0, 25) -- Сдвиг на 5 пикселей вправо
 	dropdownButton.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	dropdownButton.Text = options[default or 1] or "Select..."
 	dropdownButton.TextColor3 = self.Themes[self.Theme].Text
@@ -658,8 +779,8 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 	
 	local dropdownFrame = Instance.new("ScrollingFrame")
 	dropdownFrame.Name = "DropdownFrame"
-	dropdownFrame.Size = UDim2.new(1, 0, 0, 0)
-	dropdownFrame.Position = UDim2.new(0, 0, 0, 55)
+	dropdownFrame.Size = UDim2.new(1, -10, 0, 0) -- Учитываем сдвиг
+	dropdownFrame.Position = UDim2.new(0, 5, 0, 55) -- Сдвиг на 5 пикселей вправо
 	dropdownFrame.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	dropdownFrame.ScrollBarThickness = 3
 	dropdownFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
@@ -684,13 +805,13 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 			dropdownFrame.Visible = true
 			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, 0, 0, math.min(#options * 30, 120))
+				Size = UDim2.new(1, -10, 0, math.min(#options * 30, 120))
 			})
 			tween:Play()
 		else
 			local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			local tween = game:GetService("TweenService"):Create(dropdownFrame, tweenInfo, {
-				Size = UDim2.new(1, 0, 0, 0)
+				Size = UDim2.new(1, -10, 0, 0)
 			})
 			tween:Play()
 			tween.Completed:Connect(function()
@@ -736,71 +857,5 @@ function ModernUILibrary:CreateDropdown(parent, text, options, default, callback
 		end
 	}
 end
-
--- Демонстрационный скрипт с использованием библиотеки
-local function Demo()
-	-- Создаем UI с темной темой
-	local UI = ModernUILibrary.new({
-		Title = "Modern UI Demo",
-		Size = UDim2.new(0, 600, 0, 500),
-		Theme = "Dark",
-		CornerRadius = 10
-	})
-	
-	-- Добавляем категории
-	local mainCategory = UI:AddCategory("Main")
-	local settingsCategory = UI:AddCategory("Settings")
-	local aboutCategory = UI:AddCategory("About")
-	
-	-- Элементы для главной категории
-	UI:CreateLabel(mainCategory, "Welcome to Modern UI Library!", UDim2.new(1, -20, 0, 40))
-	
-	local testButton = UI:CreateButton(mainCategory, "Click Me!", function()
-		print("Button clicked!")
-	end)
-	
-	local checkbox = UI:CreateCheckbox(mainCategory, "Enable Feature", false, function(value)
-		print("Checkbox:", value)
-	end)
-	
-	local slider = UI:CreateSlider(mainCategory, "Volume", 0, 100, 50, function(value)
-		print("Slider value:", value)
-	end)
-	
-	local textField = UI:CreateTextField(mainCategory, "Username", "Enter your username", function(text)
-		print("Text field:", text)
-	end)
-	
-	local dropdown = UI:CreateDropdown(mainCategory, "Theme", {"Dark", "Light", "Auto"}, 1, function(option)
-		print("Selected theme:", option)
-	end)
-	
-	-- Элементы для категории настроек
-	UI:CreateLabel(settingsCategory, "UI Settings", UDim2.new(1, -20, 0, 30))
-	
-	local themeDropdown = UI:CreateDropdown(settingsCategory, "Color Theme", {"Dark", "Light"}, 1, function(theme)
-		-- Здесь можно добавить смену темы
-		print("Theme changed to:", theme)
-	end)
-	
-	local cornerSlider = UI:CreateSlider(settingsCategory, "Corner Radius", 0, 20, 8, function(value)
-		-- Здесь можно изменить радиус скругления
-		print("Corner radius:", value)
-	end)
-	
-	-- Элементы для категории About
-	UI:CreateLabel(aboutCategory, "Modern UI Library v1.0", UDim2.new(1, -20, 0, 25))
-	UI:CreateLabel(aboutCategory, "Created with Roblox Studio", UDim2.new(1, -20, 0, 25))
-	UI:CreateLabel(aboutCategory, "Features:", UDim2.new(1, -20, 0, 25))
-	UI:CreateLabel(aboutCategory, "• Modern design", UDim2.new(1, -20, 0, 20))
-	UI:CreateLabel(aboutCategory, "• Dark/Light themes", UDim2.new(1, -20, 0, 20))
-	UI:CreateLabel(aboutCategory, "• Customizable corners", UDim2.new(1, -20, 0, 20))
-	UI:CreateLabel(aboutCategory, "• Multiple UI elements", UDim2.new(1, -20, 0, 20))
-	
-	return UI
-end
-
--- Запускаем демо
-Demo()
 
 return ModernUILibrary
