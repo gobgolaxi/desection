@@ -1,6 +1,6 @@
 -- Modern UI Library for Roblox Studio
 -- Author: Assistant
--- Version: 1.1
+-- Version: 1.2
 
 local ModernUILibrary = {}
 ModernUILibrary.__index = ModernUILibrary
@@ -34,6 +34,7 @@ function ModernUILibrary.new(options)
 	self.CornerRadius = options.CornerRadius or 8
 	self.IsMinimized = false
 	self.CurrentCategory = nil
+	self.CurrentSize = options.Size or UDim2.new(0, 400, 0, 500) -- Сохраняем текущий размер
 	
 	-- Создаем основной экран
 	self:CreateScreenGui()
@@ -74,6 +75,7 @@ function ModernUILibrary:CreateMainWindow()
 end
 
 function ModernUILibrary:CreateTopBar()
+	-- Старый топ-бар (как в оригинале)
 	self.TopBar = Instance.new("Frame")
 	self.TopBar.Name = "TopBar"
 	self.TopBar.Size = UDim2.new(1, 0, 0, 40)
@@ -82,18 +84,19 @@ function ModernUILibrary:CreateTopBar()
 	self.TopBar.BorderSizePixel = 0
 	self.TopBar.Parent = self.MainFrame
 	
-	-- Убираем закругление нижних углов топбара
+	-- Закругление для всего топ-бара
 	local topBarCorner = Instance.new("UICorner")
 	topBarCorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	topBarCorner.Parent = self.TopBar
 	
-	-- Маска для скрытия нижних закруглений
+	-- Маска чтобы убрать нижние закругления
 	local topBarMask = Instance.new("Frame")
 	topBarMask.Name = "TopBarMask"
 	topBarMask.Size = UDim2.new(1, 0, 1, self.CornerRadius)
 	topBarMask.Position = UDim2.new(0, 0, 0, 0)
 	topBarMask.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	topBarMask.BorderSizePixel = 0
+	topBarMask.ZIndex = 2
 	topBarMask.Parent = self.TopBar
 	
 	-- Заголовок окна
@@ -107,6 +110,7 @@ function ModernUILibrary:CreateTopBar()
 	self.TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	self.TitleLabel.Font = Enum.Font.Gotham
 	self.TitleLabel.TextSize = 14
+	self.TitleLabel.ZIndex = 3
 	self.TitleLabel.Parent = self.TopBar
 	
 	-- Кнопка переключения темы
@@ -119,6 +123,7 @@ function ModernUILibrary:CreateTopBar()
 	self.ThemeButton.TextColor3 = Color3.new(1, 1, 1)
 	self.ThemeButton.Font = Enum.Font.GothamBold
 	self.ThemeButton.TextSize = 14
+	self.ThemeButton.ZIndex = 3
 	self.ThemeButton.Parent = self.TopBar
 	
 	local themeCorner = Instance.new("UICorner")
@@ -135,6 +140,7 @@ function ModernUILibrary:CreateTopBar()
 	self.MinimizeButton.TextColor3 = Color3.new(1, 1, 1)
 	self.MinimizeButton.Font = Enum.Font.GothamBold
 	self.MinimizeButton.TextSize = 16
+	self.MinimizeButton.ZIndex = 3
 	self.MinimizeButton.Parent = self.TopBar
 	
 	local minimizeCorner = Instance.new("UICorner")
@@ -151,6 +157,7 @@ function ModernUILibrary:CreateTopBar()
 	self.CloseButton.TextColor3 = Color3.new(1, 1, 1)
 	self.CloseButton.Font = Enum.Font.GothamBold
 	self.CloseButton.TextSize = 14
+	self.CloseButton.ZIndex = 3
 	self.CloseButton.Parent = self.TopBar
 	
 	local closeCorner = Instance.new("UICorner")
@@ -300,6 +307,8 @@ function ModernUILibrary:MakeResizable()
 					math.max(200, startSize.Y.Offset + delta.Y)
 				)
 				self.MainFrame.Size = newSize
+				-- Сохраняем текущий размер
+				self.CurrentSize = newSize
 			end
 		end
 	end)
@@ -378,24 +387,28 @@ function ModernUILibrary:ToggleMinimize()
 	self.IsMinimized = not self.IsMinimized
 	
 	if self.IsMinimized then
-		-- Анимация сворачивания
+		-- Анимация сворачивания - сохраняем ширину, меняем только высоту
+		local currentWidth = self.MainFrame.Size.X.Offset
+		local targetSize = UDim2.new(0, currentWidth, 0, 40)
+		
 		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local tween = game:GetService("TweenService"):Create(self.MainFrame, tweenInfo, {
-			Size = UDim2.new(0, self.MainFrame.Size.X.Offset, 0, 40)
+			Size = targetSize
 		})
 		tween:Play()
 		
-		-- Показываем закругления у топбара при сворачивании
+		-- Показываем полное закругление у топбара при сворачивании
 		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	else
-		-- Анимация разворачивания
+		-- Анимация разворачивания - используем сохраненный размер
 		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		local tween = game:GetService("TweenService"):Create(self.MainFrame, tweenInfo, {
-			Size = self.WindowSize
+			Size = self.CurrentSize
 		})
 		tween:Play()
 		
 		-- Убираем нижние закругления у топбара при разворачивании
+		-- Для этого используем маску, поэтому оставляем закругление
 		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	end
 end
@@ -465,7 +478,7 @@ function ModernUILibrary:SwitchCategory(name)
 	self.CategoryButtons[name].BackgroundColor3 = self.Themes[self.Theme].Accent
 end
 
--- Элементы интерфейса
+-- Элементы интерфейса (остаются без изменений, как в предыдущей версии)
 function ModernUILibrary:CreateLabel(parent, text, size)
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
