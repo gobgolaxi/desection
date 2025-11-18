@@ -1,6 +1,6 @@
 -- Modern UI Library for Roblox Studio
 -- Author: Assistant
--- Version: 1.2
+-- Version: 1.3
 
 local ModernUILibrary = {}
 ModernUILibrary.__index = ModernUILibrary
@@ -75,29 +75,20 @@ function ModernUILibrary:CreateMainWindow()
 end
 
 function ModernUILibrary:CreateTopBar()
-	-- Старый топ-бар (как в оригинале)
+	-- Простой топ-бар без масок
 	self.TopBar = Instance.new("Frame")
 	self.TopBar.Name = "TopBar"
 	self.TopBar.Size = UDim2.new(1, 0, 0, 40)
 	self.TopBar.Position = UDim2.new(0, 0, 0, 0)
 	self.TopBar.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	self.TopBar.BorderSizePixel = 0
+	self.TopBar.ZIndex = 2
 	self.TopBar.Parent = self.MainFrame
 	
-	-- Закругление для всего топ-бара
+	-- Закругление только верхних углов
 	local topBarCorner = Instance.new("UICorner")
 	topBarCorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	topBarCorner.Parent = self.TopBar
-	
-	-- Маска чтобы убрать нижние закругления
-	local topBarMask = Instance.new("Frame")
-	topBarMask.Name = "TopBarMask"
-	topBarMask.Size = UDim2.new(1, 0, 1, self.CornerRadius)
-	topBarMask.Position = UDim2.new(0, 0, 0, 0)
-	topBarMask.BackgroundColor3 = self.Themes[self.Theme].Secondary
-	topBarMask.BorderSizePixel = 0
-	topBarMask.ZIndex = 2
-	topBarMask.Parent = self.TopBar
 	
 	-- Заголовок окна
 	self.TitleLabel = Instance.new("TextLabel")
@@ -189,6 +180,7 @@ function ModernUILibrary:CreateCategories()
 	self.CategoriesFrame.Position = UDim2.new(0, 0, 0, 40)
 	self.CategoriesFrame.BackgroundColor3 = self.Themes[self.Theme].Secondary
 	self.CategoriesFrame.BorderSizePixel = 0
+	self.CategoriesFrame.ZIndex = 1
 	self.CategoriesFrame.Parent = self.MainFrame
 	
 	-- Контейнер для контента
@@ -198,6 +190,7 @@ function ModernUILibrary:CreateCategories()
 	self.ContentFrame.Position = UDim2.new(0, 120, 0, 40)
 	self.ContentFrame.BackgroundTransparency = 1
 	self.ContentFrame.ClipsDescendants = true
+	self.ContentFrame.ZIndex = 1
 	self.ContentFrame.Parent = self.MainFrame
 	
 	self.Categories = {}
@@ -332,7 +325,6 @@ function ModernUILibrary:UpdateTheme()
 	-- Обновляем основные цвета
 	self.MainFrame.BackgroundColor3 = theme.Background
 	self.TopBar.BackgroundColor3 = theme.Secondary
-	self.TopBar:FindFirstChild("TopBarMask").BackgroundColor3 = theme.Secondary
 	self.TitleLabel.TextColor3 = theme.Text
 	
 	-- Обновляем кнопки
@@ -397,8 +389,8 @@ function ModernUILibrary:ToggleMinimize()
 		})
 		tween:Play()
 		
-		-- Показываем полное закругление у топбара при сворачивании
-		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
+		-- При сворачивании показываем полное закругление
+		self.MainFrame.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	else
 		-- Анимация разворачивания - используем сохраненный размер
 		local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -407,9 +399,8 @@ function ModernUILibrary:ToggleMinimize()
 		})
 		tween:Play()
 		
-		-- Убираем нижние закругления у топбара при разворачивании
-		-- Для этого используем маску, поэтому оставляем закругление
-		self.TopBar.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
+		-- При разворачивании также показываем полное закругление
+		self.MainFrame.UICorner.CornerRadius = UDim.new(0, self.CornerRadius)
 	end
 end
 
@@ -478,7 +469,7 @@ function ModernUILibrary:SwitchCategory(name)
 	self.CategoryButtons[name].BackgroundColor3 = self.Themes[self.Theme].Accent
 end
 
--- Элементы интерфейса (остаются без изменений, как в предыдущей версии)
+-- Элементы интерфейса (остаются без изменений)
 function ModernUILibrary:CreateLabel(parent, text, size)
 	local label = Instance.new("TextLabel")
 	label.Name = "Label"
