@@ -430,7 +430,10 @@ function ModernUILibrary:AddCategory(name)
 	categoryButton.Size = UDim2.new(1, -10, 0, 35)
 	
 	-- Правильное позиционирование кнопок
-	local buttonCount = #self.CategoryButtons
+	local buttonCount = 0
+	for _ in pairs(self.CategoryButtons) do
+		buttonCount = buttonCount + 1
+	end
 	categoryButton.Position = UDim2.new(0, 5, 0, buttonCount * 40 + 5)
 	
 	categoryButton.BackgroundColor3 = self.Themes[self.Theme].Background
@@ -477,7 +480,7 @@ function ModernUILibrary:AddCategory(name)
 	categoryFrame.BackgroundTransparency = 1
 	categoryFrame.ScrollBarThickness = 3
 	categoryFrame.ScrollBarImageColor3 = self.Themes[self.Theme].Border
-	categoryFrame.Visible = false  -- ВСЕ фреймы изначально скрыты
+	categoryFrame.Visible = false
 	categoryFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	categoryFrame.Parent = self.ContentFrame
 	
@@ -492,8 +495,15 @@ function ModernUILibrary:AddCategory(name)
 	padding.PaddingRight = UDim.new(0, 5)
 	padding.Parent = categoryFrame
 	
+	-- Инициализируем таблицы если они не существуют
+	if not self.Categories then
+		self.Categories = {}
+	end
+	if not self.CategoryButtons then
+		self.CategoryButtons = {}
+	end
+	
 	-- Добавляем в таблицы
-	table.insert(self.Categories, name)
 	self.Categories[name] = categoryFrame
 	self.CategoryButtons[name] = categoryButton
 	
@@ -514,6 +524,7 @@ function ModernUILibrary:AddCategory(name)
 	
 	return categoryFrame
 end
+
 
 function ModernUILibrary:SwitchCategory(name)
 	-- Скрываем текущую вкладку
@@ -541,43 +552,6 @@ function ModernUILibrary:SwitchCategory(name)
 		})
 		tween:Play()
 	end
-end
-function ModernUILibrary:SwitchCategory(name)
-	if self.CurrentCategory then
-		self.Categories[self.CurrentCategory].Visible = false
-		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local tween = game:GetService("TweenService"):Create(self.CategoryButtons[self.CurrentCategory], tweenInfo, {
-			BackgroundColor3 = self.Themes[self.Theme].Background
-		})
-		tween:Play()
-	end
-	
-	self.CurrentCategory = name
-	self.Categories[name].Visible = true
-	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = game:GetService("TweenService"):Create(self.CategoryButtons[name], tweenInfo, {
-		BackgroundColor3 = self.Themes[self.Theme].Accent
-	})
-	tween:Play()
-end
-
-function ModernUILibrary:SwitchCategory(name)
-	if self.CurrentCategory then
-		self.Categories[self.CurrentCategory].Visible = false
-		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local tween = game:GetService("TweenService"):Create(self.CategoryButtons[self.CurrentCategory], tweenInfo, {
-			BackgroundColor3 = self.Themes[self.Theme].Background
-		})
-		tween:Play()
-	end
-	
-	self.CurrentCategory = name
-	self.Categories[name].Visible = true
-	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-	local tween = game:GetService("TweenService"):Create(self.CategoryButtons[name], tweenInfo, {
-		BackgroundColor3 = self.Themes[self.Theme].Accent
-	})
-	tween:Play()
 end
 
 -- БАЗОВЫЕ ЭЛЕМЕНТЫ ИНТЕРФЕЙСА
