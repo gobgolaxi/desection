@@ -1,5 +1,5 @@
 -- DoomSense UI Library
--- Version: 1.0.0
+-- Version: 1.0.1
 
 local DoomSense = {}
 DoomSense.__index = DoomSense
@@ -103,6 +103,8 @@ function DoomSense:_CreateUI()
 	elseif syn and syn.protect_gui then
 		syn.protect_gui(self.ScreenGui)
 		self.ScreenGui.Parent = game.CoreGui
+	elseif get_hidden_ui then
+		self.ScreenGui.Parent = get_hidden_ui()
 	else
 		self.ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	end
@@ -253,7 +255,7 @@ function DoomSense:_CreateUI()
 		Parent = self.RightPanel,
 		Name = "ContentFrame",
 		Size = UDim2.new(1, 0, 1, self.Config.ShowSearch and -50 or -10),
-		Position = UDim2.new(0, 0, 0, self.Config.ShowSearch and 50 : 10),
+		Position = UDim2.new(0, 0, 0, self.Config.ShowSearch and 50 or 10),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 4,
@@ -346,7 +348,13 @@ end
 
 function DoomSense:_ApplyTheme()
 	if self.Theme == "Light" then
-		self.Colors = LIGHT_THEME
+		for key, value in pairs(LIGHT_THEME) do
+			self.Colors[key] = value
+		end
+	else
+		for key, value in pairs(DEFAULT_SETTINGS) do
+			self.Colors[key] = value
+		end
 	end
 	
 	-- Update all UI elements
@@ -634,7 +642,7 @@ function DoomSense:AddCheckbox(text, bind, bindType, default, callback, tabId)
 	
 	-- Bind handling
 	if bind then
-		self.Binds[bind] = {
+		self.Binds[tostring(bind)] = {
 			Type = "Checkbox",
 			Element = checkboxFrame,
 			BindType = bindType,
